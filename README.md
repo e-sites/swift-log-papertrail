@@ -21,7 +21,7 @@ Add `PapertrailLogHandler` to your target dependencies:
 
 ### Configure
 
-Configure the logger by bootstrapping a `DataDogLogHandler` instance.
+Configure the logger by bootstrapping a `PapertrailLogHandler` instance.
 
 ```swift
 import PapertrailLogHandler
@@ -39,7 +39,7 @@ LoggingSystem.bootstrap { label in
 
 ### Logging
 
-To send logs to Datadog, initialize a `Logger` instance and send a message with optional additional metadata:
+To send logs to Papertrail, initialize a `Logger` instance and send a message with optional additional metadata:
 
 ```swift
 import Loggingx
