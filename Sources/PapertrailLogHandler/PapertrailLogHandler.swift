@@ -6,22 +6,23 @@ public struct PapertrailLogHandler: LogHandler {
     public var logLevel = Logger.Level.trace
     public var label: String {
         didSet {
-            self.socketClient.senderName = label
+            self.queue.socketClient.senderName = label
         }
     }
 
     public var programName: String {
         didSet {
-            self.socketClient.programName = programName
+            self.queue.socketClient.programName = programName
         }
     }
 
-    private let socketClient: PapertrailSocketClient
+    private let queue: Queue
 
     public init(label: String, host: String, port: UInt16, programName: String) {
         self.label = label
         self.programName = programName
-        self.socketClient = PapertrailSocketClient(host: host, port: port, senderName: label, programName: programName)
+        let socketClient = PapertrailSocketClient(host: host, port: port, senderName: label, programName: programName)
+        self.queue = Queue(socketClient: socketClient)
     }
 
     public func log(level: Logger.Level, message: Logger.Message, metadata: Logger.Metadata?, file: String, function: String, line: UInt) {
@@ -47,7 +48,7 @@ public struct PapertrailLogHandler: LogHandler {
         if !metadata.isEmpty, let string = prettify(metadata) {
             metadataString = " -- \(string)"
         }
-        socketClient.send(message: "[\(levelString)] \(message.description)\(metadataString)")
+        queue.add(message: "[\(levelString)] \(message.description)\(metadataString)")
     }
 
     public subscript(metadataKey metadataKey: String) -> Logger.Metadata.Value? {

@@ -1,6 +1,10 @@
 import Foundation
 import CocoaAsyncSocket
 
+protocol PapertrailSocketClientDelegate: class {
+    func didChangeConnectionStatus(client: PapertrailSocketClient, connectionStatus: PapertrailSocketClient.ConnectionStatus)
+}
+
 class PapertrailSocketClient: NSObject {
 
     enum ConnectionStatus: String {
@@ -22,7 +26,13 @@ class PapertrailSocketClient: NSObject {
     var senderName: String = ""
     var programName: String = "program"
 
-    fileprivate(set) var connectionStatus: ConnectionStatus = .disconnected
+    weak var delegate: PapertrailSocketClientDelegate?
+
+    fileprivate(set) var connectionStatus: ConnectionStatus = .disconnected {
+        didSet {
+            delegate?.didChangeConnectionStatus(client: self, connectionStatus: connectionStatus)
+        }
+    }
     
     init(host: String, port: UInt16, senderName: String, programName: String) {
         super.init()
@@ -48,12 +58,10 @@ class PapertrailSocketClient: NSObject {
         }
     }
 
-    func send(message: String) {
+    func send(message: String, date: Date = Date()) {
         if host == "" || port == 0 {
             return
         }
-
-        let date = dateFormatter.string(from: Date())
 
         if !tcpSocket.isConnected {
             if connectionStatus == .connecting {
@@ -62,8 +70,10 @@ class PapertrailSocketClient: NSObject {
             connectTCPSocket()
         }
 
+        let dateString = dateFormatter.string(from: date)
+
         message.components(separatedBy: "\n")
-            .map { "<22>1 \(date) \(senderName) \(programName) - - - \($0)\n" }
+            .map { "<22>1 \(dateString) \(senderName) \(programName) - - - \($0)\n" }
             .compactMap { $0.data(using: .utf8) }
             .forEach { tcpSocket.write($0, withTimeout: -1, tag: 1) }
     }
